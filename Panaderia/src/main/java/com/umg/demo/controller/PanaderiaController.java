@@ -80,6 +80,8 @@ public class PanaderiaController {
     public ResponseEntity<Factura> despachaPedido(@RequestBody Factura facturas)
             throws IOException,
             SOAPException, JAXBException {
+
+        float totalFactura = 0;
         JsonMapper mapper = new JsonMapper();
         log.info("data: {}", mapper.writeValueAsString(facturas));
         // Declaramos el detalle a guardar
@@ -87,52 +89,55 @@ public class PanaderiaController {
         // Lista de productos a descontar
         List<Productos> productos = new ArrayList<>();
 
-        for (DetalleFactura deta : facturas.getDetalleFacturas()) {
-            Productos temProductos = new Productos();
-            temProductos.setIdProductos(deta.getProductos().getIdProductos());
-            temProductos.setStock(deta.getCantidad());
-            productos.add(temProductos);
-        }
-        for (Productos prod : productos) {
-            Optional<Productos> tmProductos = iProductos.findById(prod.getIdProductos());
-            if (tmProductos.isPresent()) {
-                Productos newP = tmProductos.get();
-                if (newP.getStock() >= prod.getStock()) {
-                    newP.setStock(newP.getStock() - prod.getStock());
-                    iProductos.save(newP);
-                } else {
-                    log.error("No hay productos suficientes para despachar el pedido");
-                    return ResponseEntity.ok(null);
-                }
-            }
-
-        }
-
-        // Declaremos la factura a guardar
         Factura newFactura = new Factura();
         newFactura.setClientes(facturas.getClientes());
         newFactura.setNit(facturas.getNit());
         newFactura.setFechaFactura(facturas.getFechaFactura());
         newFactura.setTotalFactura(facturas.getTotalFactura());
-        try {
 
-            Factura factura = iFactura.save(newFactura);
-            if (factura != null) {
-                for (DetalleFactura detalle : facturas.getDetalleFacturas()) {
-                    newDetalleFactura.setCantidad(detalle.getCantidad());
-                    newDetalleFactura.setProductos(detalle.getProductos());
-                    newDetalleFactura.setFacturas(factura);
-                    iDetalleFactura.save(newDetalleFactura);
+        Factura factura = iFactura.save(newFactura);
+
+        for (DetalleFactura deta : facturas.getDetalleFacturas()) {
+            Productos temProductos = new Productos();
+            temProductos.setIdProductos(deta.getProductos().getIdProductos());
+            temProductos.setStock(deta.getCantidad());
+            productos.add(temProductos);
+
+            Optional<Productos> tmProductos = iProductos.findById(temProductos.getIdProductos());
+            if (tmProductos.isPresent()) {
+                Productos newP = tmProductos.get();
+                if (newP.getStock() >= deta.getCantidad()) {
+                    newP.setStock(newP.getStock() - deta.getCantidad());
+                    iProductos.save(newP);
+                    deta.setFacturas(factura);
+                    iDetalleFactura.save(deta);
+                    totalFactura += newP.getPrecio() * deta.getCantidad();
                 }
-                factura = iFactura.findById(factura.getIdFactura()).get();
-                return ResponseEntity.ok(factura);
             }
 
-        } catch (Exception e) {
-            log.error("Error al guardar la factura: {}", e.getMessage());
+        }
+        factura.setTotalFactura(totalFactura);
+        factura = iFactura.save(factura);
+        if (factura.getIdFactura() != null) {
+            return ResponseEntity.ok(factura);
+        }
+        return ResponseEntity.ok(null);
+    }
+
+    @PostMapping("/save/productos")
+    public ResponseEntity<Productos> saveProductos(@RequestBody Productos productos)
+            throws IOException,
+            SOAPException, JAXBException {
+        if (productos != null) {
+
+            Productos newProductos = iProductos.save(productos);
+            if (newProductos != null) {
+                return ResponseEntity.ok(newProductos);
+            }
+
         }
 
-        return ResponseEntity.ok(null);
+        return ResponseEntity.badRequest().build();
     }
 
 }
