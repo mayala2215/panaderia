@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,8 +31,8 @@ public class Clientes implements Serializable {
     private String user;
     @Column(name = "password")
     private String password;
-    @OneToMany
+    @OneToOne
     @JoinColumn(name = "personas_idPersona")
-    private List<Personas> personas;
+    private Personas personas;
 
 }

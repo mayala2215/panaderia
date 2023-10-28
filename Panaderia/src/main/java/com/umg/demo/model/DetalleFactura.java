@@ -3,6 +3,8 @@ package com.umg.demo.model;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,11 +31,12 @@ public class DetalleFactura implements Serializable {
     private Integer idDetalle;
     @Column(name = "cantidad")
     private Float cantidad;
-    @OneToMany
+    @JsonBackReference
+    @OneToOne
     @JoinColumn(name = "factura_idFactura")
-    private List<Factura> facturas;
-    @OneToMany
+    private Factura facturas;
+    @OneToOne
     @JoinColumn(name = "productos_idProductos")
-    private List<Productos> productos;
+    private Productos productos;
 
 }
