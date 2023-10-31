@@ -76,6 +76,23 @@ public class PanaderiaController {
         return ResponseEntity.ok(null);
     }
 
+    @PostMapping("/list/productos/id")
+    public ResponseEntity<Productos> productoId(@RequestBody Integer data)
+            throws IOException,
+            SOAPException, JAXBException {
+        Productos productos = new Productos();
+        if (data != null) {
+            Optional<Productos> tmFactura = iProductos.findById(data);
+            if (tmFactura.isPresent()) {
+                productos = tmFactura.get();
+                return ResponseEntity.ok(productos);
+            }
+        }
+        log.info("data: {}", data);
+
+        return ResponseEntity.ok(null);
+    }
+
     @PostMapping("/save/pedidos")
     public ResponseEntity<Factura> despachaPedido(@RequestBody Factura facturas)
             throws IOException,
